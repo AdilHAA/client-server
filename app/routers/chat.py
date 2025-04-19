@@ -136,28 +136,36 @@ async def websocket_endpoint(
 ):
     await websocket.accept()
     
-    # Validate authentication (simplified for WebSocket)
+    # Валидация аутентификации
     try:
-        auth_header = websocket.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
+        # В WebSocket нет normal headers, получаем из query параметров
+        token = websocket.query_params.get("token")
+        if not token:
+            auth_header = websocket.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+        
+        if not token:
+            print(f"WebSocket closed: No authentication token provided")
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
             
-        token = auth_header.split(" ")[1]
-        # You would verify the token and get current_user
-        # For this mock, we'll assume it's valid
+        # Здесь должна быть полноценная валидация JWT токена
+        # Но для простоты мы просто проверим его наличие
         
-        # Add connection to active connections
+        # Добавляем соединение к активным
         if chat_id not in active_connections:
             active_connections[chat_id] = []
         active_connections[chat_id].append(websocket)
+        print(f"WebSocket connection added for chat {chat_id}")
         
         try:
             while True:
                 data = await websocket.receive_text()
+                print(f"WebSocket received data: {data}")
                 message_data = json.loads(data)
                 
-                # Create user message in DB
+                # Создаем сообщение пользователя в БД
                 db_message = Message(
                     chat_id=chat_id,
                     role="user",
@@ -167,11 +175,12 @@ async def websocket_endpoint(
                 db.add(db_message)
                 db.commit()
                 db.refresh(db_message)
+                print(f"User message saved to DB: {db_message.id}")
                 
-                # Process with AI
+                # Обрабатываем с помощью AI
                 ai_response = await process_message(message_data.get("content", ""))
                 
-                # Save AI response
+                # Сохраняем ответ AI
                 ai_message = Message(
                     chat_id=chat_id,
                     role="assistant",
@@ -181,19 +190,25 @@ async def websocket_endpoint(
                 db.add(ai_message)
                 db.commit()
                 db.refresh(ai_message)
+                print(f"AI message saved to DB: {ai_message.id}")
                 
-                # Send response back
-                await websocket.send_text(json.dumps({
+                # Отправляем ответ обратно
+                response_data = {
                     "id": ai_message.id,
                     "role": "assistant",
                     "content": ai_response,
                     "created_at": ai_message.created_at.isoformat(),
                     "is_voice": 0
-                }))
+                }
+                await websocket.send_text(json.dumps(response_data))
+                print(f"Response sent via WebSocket: {ai_message.id}")
                 
         except WebSocketDisconnect:
-            active_connections[chat_id].remove(websocket)
+            if chat_id in active_connections and websocket in active_connections[chat_id]:
+                active_connections[chat_id].remove(websocket)
+                print(f"WebSocket disconnected for chat {chat_id}")
     except Exception as e:
+        print(f"WebSocket error: {str(e)}")
         if chat_id in active_connections and websocket in active_connections[chat_id]:
             active_connections[chat_id].remove(websocket)
         await websocket.close() 

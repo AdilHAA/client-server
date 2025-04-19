@@ -1,30 +1,41 @@
-# AI Assistant API
+# AI Assistant
 
-Backend service built with FastAPI featuring user authentication, chat functionality with WebSocket support, and a LangChain-based agent for answering questions with the latest information from the web.
+Полноценное приложение с чат-ботом, включающее бэкенд на FastAPI и фронтенд на React. Система обеспечивает аутентификацию пользователей, чат с историей сообщений через WebSocket и возможность голосового управления.
 
-## Features
+## Возможности
 
-- User authentication (registration and login)
-- Chat history storage
-- WebSocket support for real-time chat
-- Mock voice command functionality (ready for integration with actual speech services)
-- LangChain agent with web search capabilities (mock implementation)
-- Database storage for users and chat history
+### Бэкенд (FastAPI)
+- Аутентификация пользователей (регистрация и вход)
+- Хранение истории чатов
+- Поддержка WebSocket для обмена сообщениями в реальном времени
+- Функциональность голосовых команд (моковая реализация)
+- LangChain агент с возможностью веб-поиска (моковая реализация)
+- База данных SQLite для хранения пользователей и истории чатов
 
-## Installation
+### Фронтенд (React)
+- Современный интерфейс с использованием styled-components
+- Адаптивный дизайн для десктопов и мобильных устройств
+- Страницы для входа и регистрации
+- Список чатов с возможностью создания новых
+- Чат с поддержкой текстовых и голосовых сообщений
+- WebSocket для получения ответов в режиме реального времени
 
-1. Clone the repository:
+## Установка
+
+### Бэкенд
+
+1. Клонируйте репозиторий:
    ```
    git clone <repository-url>
    cd <project-directory>
    ```
 
-2. Create a virtual environment:
+2. Создайте виртуальное окружение:
    ```
    python -m venv venv
    ```
 
-3. Activate the virtual environment:
+3. Активируйте виртуальное окружение:
    - Windows:
      ```
      venv\Scripts\activate
@@ -34,82 +45,134 @@ Backend service built with FastAPI featuring user authentication, chat functiona
      source venv/bin/activate
      ```
 
-4. Install dependencies:
+4. Установите зависимости:
    ```
    pip install -r requirements.txt
    ```
 
-## Running the Application
+### Фронтенд
 
-Start the application with:
+1. Перейдите в директорию клиента:
+   ```
+   cd client
+   ```
+
+2. Установите зависимости:
+   ```
+   npm install
+   ```
+
+## Запуск приложения
+
+### Бэкенд
+
+Запустите сервер с помощью:
 
 ```
 python main.py
 ```
 
-Or using uvicorn directly:
+Или напрямую через uvicorn:
 
 ```
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8080
 ```
 
-The API will be available at `http://localhost:8000`.
+API будет доступно по адресу `http://localhost:8080`.
 
-## API Documentation
+### Фронтенд
 
-After starting the server, you can access the interactive API documentation at:
+Запустите React приложение:
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+```
+cd client
+npm start
+```
 
-## API Endpoints
+Фронтенд будет доступен по адресу `http://localhost:3000`.
 
-### Authentication
+## Документация API
 
-- `POST /auth/register` - Register a new user
-- `POST /auth/token` - Login and get access token
+После запуска сервера, вы можете получить доступ к интерактивной документации API:
 
-### Chat
+- Swagger UI: `http://localhost:8080/docs`
+- ReDoc: `http://localhost:8080/redoc`
 
-- `POST /chat/` - Create a new chat
-- `GET /chat/` - Get all chats for current user
-- `GET /chat/{chat_id}` - Get a specific chat
-- `POST /chat/{chat_id}/messages` - Send a message in a chat
-- `GET /chat/{chat_id}/messages` - Get all messages in a chat
-- `WebSocket /chat/ws/{chat_id}` - WebSocket endpoint for real-time chat
+## Структура проекта
 
-### Voice
+```
+ai-assistant/
+├── app/                      # Бэкенд-код FastAPI
+│   ├── database/             # Настройки базы данных
+│   ├── models/               # SQLAlchemy модели
+│   ├── routers/              # API маршруты
+│   ├── schemas/              # Pydantic схемы
+│   └── utils/                # Утилиты (auth, AI agent)
+├── client/                   # Фронтенд-код React
+│   ├── public/               # Публичные файлы
+│   └── src/                  # Исходный код React
+│       ├── api/              # API клиенты
+│       ├── components/       # React компоненты
+│       ├── context/          # Контексты (Auth)
+│       └── pages/            # Страницы приложения
+├── venv/                     # Виртуальное окружение Python
+├── .env                      # Переменные окружения
+├── .gitignore                # Исключения для Git
+├── app.db                    # SQLite база данных
+├── main.py                   # Главный файл FastAPI
+└── requirements.txt          # Python зависимости
+```
 
-- `POST /voice/transcribe` - Transcribe voice to text (mock)
-- `POST /voice/synthesize` - Convert text to speech (mock)
+## API эндпойнты
 
-## WebSocket Usage
+### Аутентификация
 
-Connect to the WebSocket endpoint with:
+- `POST /auth/register` - Регистрация нового пользователя
+- `POST /auth/token` - Вход и получение токена доступа
+
+### Чат
+
+- `POST /chat/` - Создание нового чата
+- `GET /chat/` - Получение всех чатов текущего пользователя
+- `GET /chat/{chat_id}` - Получение конкретного чата
+- `POST /chat/{chat_id}/messages` - Отправка сообщения в чат
+- `GET /chat/{chat_id}/messages` - Получение всех сообщений в чате
+- `WebSocket /chat/ws/{chat_id}` - WebSocket эндпойнт для общения в реальном времени
+
+### Голосовые команды
+
+- `POST /voice/transcribe` - Преобразование голоса в текст (моковая реализация)
+- `POST /voice/synthesize` - Преобразование текста в речь (моковая реализация)
+
+## Использование WebSocket
+
+Для правильного подключения к WebSocket с аутентификацией:
 
 ```javascript
-const socket = new WebSocket('ws://localhost:8000/chat/ws/{chat_id}');
+const token = localStorage.getItem('token');
+const socket = new WebSocket(`ws://localhost:8080/chat/ws/${chatId}?token=${token}`);
 
-// Add authorization header
+// Открытие соединения
 socket.onopen = function(e) {
-  console.log('Connection established');
+  console.log('Соединение установлено');
   
-  // Send a message
+  // Отправка сообщения
   socket.send(JSON.stringify({
-    content: 'Hello, AI Assistant!',
+    content: 'Привет, AI Assistant!',
     is_voice: 0
   }));
 };
 
-// Receive messages
+// Получение сообщений
 socket.onmessage = function(event) {
   const response = JSON.parse(event.data);
-  console.log('Message from server:', response);
+  console.log('Сообщение от сервера:', response);
 };
 ```
 
-## Security Notes
+## Примечания по безопасности
 
-- For production use, replace the `SECRET_KEY` in `app/utils/auth.py` with a secure random key and store it in environment variables
-- Configure proper CORS settings in `main.py` for production
-- Use HTTPS in production 
+- Для использования в продакшн замените `SECRET_KEY` в `app/utils/auth.py` на безопасный случайный ключ и храните его в переменных окружения
+- Настройте корректные CORS настройки в `main.py` для продакшн
+- Используйте HTTPS в продакшн
+- Рассмотрите возможность использования более надежной базы данных вместо SQLite для продакшн 
