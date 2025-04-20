@@ -31,7 +31,22 @@ const ChatWindow = () => {
         // в противном случае создаем пустой массив
         if (Array.isArray(messagesData) && messagesData.length > 0) {
           console.log(`Loaded ${messagesData.length} messages for chat ${chatId}`);
-          setMessages(messagesData);
+          
+          // Проверка каждого сообщения на наличие обязательных полей
+          const validMessages = messagesData.filter(msg => 
+            msg && msg.id && msg.content && msg.role && msg.created_at
+          );
+          
+          if (validMessages.length !== messagesData.length) {
+            console.warn(`Filtered out ${messagesData.length - validMessages.length} invalid messages`);
+          }
+          
+          // Сортировка по времени создания
+          const sortedMessages = [...validMessages].sort((a, b) => 
+            new Date(a.created_at) - new Date(b.created_at)
+          );
+          
+          setMessages(sortedMessages);
         } else {
           console.log('No messages found or invalid response format');
           setMessages([]);

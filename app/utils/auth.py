@@ -16,6 +16,7 @@ from app.schemas.user import TokenData
 SECRET_KEY = os.getenv("SECRET_KEY", "my_super_secret_key_for_development_only")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -39,17 +40,37 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def decode_token(token):
+def create_refresh_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def decode_token(token, verify_type=None):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Проверяем тип токена, если требуется
+        if verify_type and payload.get("type") != verify_type:
+            print(f"Token type mismatch: expected {verify_type}, got {payload.get('type')}", file=sys.stderr)
+            return None
+            
         username = payload.get("sub")
         if username is None:
             return None
-        return {"username": username}
+            
+        # Проверяем срок действия (хотя jwt.decode уже должен это проверить)
+        exp = payload.get("exp")
+        if exp is None or datetime.fromtimestamp(exp) < datetime.utcnow():
+            print(f"Token expired at {datetime.fromtimestamp(exp)}", file=sys.stderr)
+            return None
+            
+        return {"username": username, "exp": exp, "type": payload.get("type")}
     except JWTError as e:
         print(f"JWT Error: {str(e)}", file=sys.stderr)
         return None
@@ -61,7 +82,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    user_data = decode_token(token)
+    user_data = decode_token(token, verify_type="access")
     if user_data is None:
         print(f"Authentication failed: invalid token", file=sys.stderr)
         raise credentials_exception

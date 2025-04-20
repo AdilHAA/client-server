@@ -2,26 +2,44 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllChats, createChat } from '../api/chatApi';
 import styled from 'styled-components';
+import { useAuth } from '../context/AuthContext';
 
 const ChatList = () => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { user, isAuth } = useAuth();
 
   useEffect(() => {
+    if (!isAuth) {
+      console.log('User not authenticated, redirecting to login');
+      navigate('/login');
+      return;
+    }
+    
     fetchChats();
-  }, []);
+  }, [isAuth, navigate]);
 
   const fetchChats = async () => {
     try {
       setLoading(true);
+      console.log('Trying to fetch chats...');
       const chatList = await getAllChats();
-      setChats(chatList);
-      setError(null);
+      console.log('Received chat list:', chatList);
+      
+      if (Array.isArray(chatList)) {
+        setChats(chatList);
+        setError(null);
+      } else {
+        console.error('Received invalid chat list format:', chatList);
+        setError('Формат данных чатов некорректен');
+        setChats([]);
+      }
     } catch (err) {
-      setError('Не удалось загрузить чаты');
-      console.error(err);
+      console.error('Error in ChatList.fetchChats:', err);
+      setError('Не удалось загрузить чаты. Пожалуйста, убедитесь, что вы вошли в систему.');
+      setChats([]);
     } finally {
       setLoading(false);
     }

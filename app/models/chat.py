@@ -16,6 +16,15 @@ class Chat(Base):
     # Relationships
     user = relationship("User", backref="chats")
     messages = relationship("Message", back_populates="chat", cascade="all, delete-orphan")
+    
+    def dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "title": self.title,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
 
 class Message(Base):
     __tablename__ = "messages"
@@ -28,4 +37,14 @@ class Message(Base):
     is_voice = Column(Integer, default=0)  # 0: text, 1: voice message
 
     # Relationships
-    chat = relationship("Chat", back_populates="messages") 
+    chat = relationship("Chat", back_populates="messages")
+    
+    def dict(self):
+        return {
+            "id": self.id,
+            "chat_id": self.chat_id,
+            "role": self.role,
+            "content": self.content,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "is_voice": self.is_voice
+        } 

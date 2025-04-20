@@ -126,7 +126,25 @@ async def get_messages(
 ):
     chat = await get_chat_or_404(chat_id, current_user.id, db)
     messages = db.query(Message).filter(Message.chat_id == chat.id).order_by(Message.created_at).all()
-    return messages
+    
+    # Отладочный вывод
+    print(f"Retrieved {len(messages)} messages for chat {chat_id}")
+    
+    # Явное преобразование SQLAlchemy моделей в словари для корректной сериализации
+    result = []
+    for msg in messages:
+        result.append({
+            "id": msg.id,
+            "chat_id": msg.chat_id,
+            "role": msg.role,
+            "content": msg.content,
+            "created_at": msg.created_at.isoformat(),
+            "is_voice": msg.is_voice
+        })
+    
+    print(f"Serialized {len(result)} messages")
+    
+    return result
 
 @router.websocket("/ws/{chat_id}")
 async def websocket_endpoint(

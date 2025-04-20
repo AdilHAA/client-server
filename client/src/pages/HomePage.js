@@ -42,9 +42,9 @@ const HomePage = () => {
           </ButtonGroup>
         </HeroContent>
         <HeroImage>
-          <ChatBubble position="top">Привет! Чем я могу помочь?</ChatBubble>
-          <ChatBubble position="middle">Расскажи мне последние новости о технологиях</ChatBubble>
-          <ChatBubble position="bottom">
+          <ChatBubble $position="top">Привет! Чем я могу помочь?</ChatBubble>
+          <ChatBubble $position="middle">Расскажи мне последние новости о технологиях</ChatBubble>
+          <ChatBubble $position="bottom">
             Вот что мне удалось найти о последних технологических трендах...
           </ChatBubble>
         </HeroImage>
@@ -217,17 +217,17 @@ const ChatBubble = styled.div`
   max-width: 80%;
   position: relative;
   
-  ${props => props.position === 'top' && `
+  ${props => props.$position === 'top' && `
     align-self: flex-start;
   `}
   
-  ${props => props.position === 'middle' && `
+  ${props => props.$position === 'middle' && `
     align-self: flex-end;
     background-color: var(--primary-color);
     color: white;
   `}
   
-  ${props => props.position === 'bottom' && `
+  ${props => props.$position === 'bottom' && `
     align-self: flex-start;
   `}
 `;
