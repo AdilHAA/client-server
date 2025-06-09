@@ -53,6 +53,7 @@ def create_refresh_token(data: dict):
 
 def decode_token(token, verify_type=None):
     try:
+        print(f"Decoding token: {token[:10]}... (type check: {verify_type})", file=sys.stderr)
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         
         # Проверяем тип токена, если требуется
@@ -62,12 +63,21 @@ def decode_token(token, verify_type=None):
             
         username = payload.get("sub")
         if username is None:
+            print(f"No 'sub' field in token payload", file=sys.stderr)
             return None
             
         # Проверяем срок действия (хотя jwt.decode уже должен это проверить)
         exp = payload.get("exp")
-        if exp is None or datetime.fromtimestamp(exp) < datetime.utcnow():
-            print(f"Token expired at {datetime.fromtimestamp(exp)}", file=sys.stderr)
+        if exp is None:
+            return None
+            
+        try:
+            exp_datetime = datetime.fromtimestamp(float(exp))
+            if exp_datetime < datetime.utcnow():
+                print(f"Token expired at {exp_datetime}", file=sys.stderr)
+                return None
+        except (ValueError, TypeError) as e:
+            print(f"Error parsing token expiration: {str(e)}", file=sys.stderr)
             return None
             
         return {"username": username, "exp": exp, "type": payload.get("type")}
@@ -82,6 +92,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
+    print(f"Authenticating user with token: {token[:10] if token else 'None'}...", file=sys.stderr)
     user_data = decode_token(token, verify_type="access")
     if user_data is None:
         print(f"Authentication failed: invalid token", file=sys.stderr)

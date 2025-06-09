@@ -17,23 +17,23 @@ const LoginPage = () => {
       <AppInfo>
         <LogoContainer>
           <Logo />
-          <AppName>VoiceConnect</AppName>
+          <AppName>AI Assistant</AppName>
         </LogoContainer>
         <AppDescription>
-          Общайтесь с помощью текста и голосовых сообщений в современном и удобном мессенджере
+          Интеллектуальный помощник с голосовым управлением и доступом к актуальной информации
         </AppDescription>
         <Features>
           <FeatureItem>
-            <FeatureIcon>🔒</FeatureIcon>
-            <FeatureText>Шифрование сообщений</FeatureText>
+            <FeatureIcon>🎙️</FeatureIcon>
+            <FeatureText>Голосовое управление</FeatureText>
           </FeatureItem>
           <FeatureItem>
-            <FeatureIcon>🎙️</FeatureIcon>
-            <FeatureText>Голосовые сообщения</FeatureText>
+            <FeatureIcon>🔍</FeatureIcon>
+            <FeatureText>Поиск актуальной информации</FeatureText>
           </FeatureItem>
           <FeatureItem>
             <FeatureIcon>💬</FeatureIcon>
-            <FeatureText>Групповые чаты</FeatureText>
+            <FeatureText>Интеллектуальные ответы</FeatureText>
           </FeatureItem>
         </Features>
       </AppInfo>

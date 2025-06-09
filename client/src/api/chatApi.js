@@ -7,7 +7,7 @@ export const getAllChats = async () => {
     console.log('Sending request to get all chats...');
     const response = await axiosInstance.get('/chat/');
     console.log('Received chats response:', response);
-    
+
     // API возвращает объект с полем chats, которое содержит массив чатов
     if (response.data && response.data.chats) {
       console.log('Retrieved chats:', response.data.chats);
@@ -23,7 +23,7 @@ export const getAllChats = async () => {
         console.log('Found possible chats array in response:', possibleChatsArrays[0]);
         return possibleChatsArrays[0];
       }
-      
+
       // Если не нашли массив, превращаем объект в массив
       console.log('Transforming object to array:', response.data);
       return [response.data];
@@ -74,22 +74,22 @@ export const getChatMessages = async (chatId) => {
   try {
     console.log(`Fetching messages for chat ${chatId}...`);
     const response = await axiosInstance.get(`/chat/${chatId}/messages`);
-    
+
     // Проверка ответа
     if (!response.data) {
       console.error('Empty response data from server');
       return [];
     }
-    
+
     console.log(`Received ${Array.isArray(response.data) ? response.data.length : 'unknown'} messages`);
     console.log('Response data type:', typeof response.data);
-    
+
     // Убедимся, что у нас массив
     if (!Array.isArray(response.data)) {
       console.error('Response is not an array:', response.data);
       return [];
     }
-    
+
     // Проверим формат даты и выполним преобразование при необходимости
     const formattedMessages = response.data.map(msg => {
       // Если формат даты не ISO, преобразуем
@@ -102,7 +102,7 @@ export const getChatMessages = async (chatId) => {
       }
       return msg;
     });
-    
+
     return formattedMessages;
   } catch (error) {
     console.error(`Error fetching messages for chat ${chatId}:`, error);
@@ -158,35 +158,64 @@ export const connectWebSocket = (chatId, onMessage) => {
     throw new Error('Authentication required');
   }
 
+  // Определяем правильный хост для WebSocket (такой же, как для HTTP запросов)
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = 'localhost:8080'; // Используем тот же хост, что и для HTTP запросов
+
   // Передаем токен как query параметр для WebSocket
-  const ws = new WebSocket(`ws://localhost:8080/chat/ws/${chatId}?token=${accessToken}`);
-  
+  const wsUrl = `${protocol}//${host}/chat/ws/${chatId}?token=${accessToken}`;
+  console.log('Connecting to WebSocket:', wsUrl);
+
+  const ws = new WebSocket(wsUrl);
+
   ws.onopen = () => {
     console.log(`WebSocket connection established for chat ${chatId}`);
   };
-  
+
   ws.onmessage = (event) => {
     console.log('WebSocket message received:', event.data);
-    const data = JSON.parse(event.data);
-    onMessage(data);
+    try {
+      const data = JSON.parse(event.data);
+      onMessage(data);
+    } catch (e) {
+      console.error('Error parsing WebSocket message:', e);
+    }
   };
-  
+
   ws.onerror = (error) => {
     console.error('WebSocket error:', error);
   };
-  
+
   ws.onclose = (event) => {
-    console.log(`WebSocket connection closed for chat ${chatId}, code: ${event.code}`);
+    console.log(`WebSocket connection closed for chat ${chatId}, code: ${event.code}, reason: ${event.reason}`);
   };
-  
+
   return {
     send: (content, isVoice = 0) => {
-      const message = JSON.stringify({ content, is_voice: isVoice });
-      console.log('Sending WebSocket message:', message);
-      ws.send(message);
+      if (!content || !content.trim()) {
+        console.warn('Attempted to send empty message');
+        return;
+      }
+
+      try {
+        const message = JSON.stringify({
+          content,
+          is_voice: isVoice,
+          timestamp: new Date().toISOString()
+        });
+        console.log('Sending WebSocket message:', message);
+        ws.send(message);
+      } catch (e) {
+        console.error('Error sending message via WebSocket:', e);
+        throw e;
+      }
     },
     close: () => {
-      ws.close();
+      try {
+        ws.close();
+      } catch (e) {
+        console.error('Error closing WebSocket:', e);
+      }
     }
   };
 }; 

@@ -32,11 +32,11 @@ const RegisterForm = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!username.trim()) {
       newErrors.username = 'Имя пользователя обязательно';
     }
-    
+
     if (!email.trim()) {
       newErrors.email = 'Email обязателен';
     } else {
@@ -45,30 +45,30 @@ const RegisterForm = () => {
         newErrors.email = 'Введите корректный email';
       }
     }
-    
+
     if (!password) {
       newErrors.password = 'Пароль обязателен';
     } else if (password.length < 6) {
       newErrors.password = 'Пароль должен быть не менее 6 символов';
     }
-    
+
     if (!passwordConfirm) {
       newErrors.passwordConfirm = 'Подтверждение пароля обязательно';
     } else if (password !== passwordConfirm) {
       newErrors.passwordConfirm = 'Пароли не совпадают';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     const success = await register(username, email, password);
     if (success) {
       toast.success('Регистрация выполнена успешно! Теперь вы можете войти в систему.');
@@ -80,9 +80,9 @@ const RegisterForm = () => {
     <FormContainer>
       <FormHeader>
         <Title>Регистрация</Title>
-        <Subtitle>Создайте новый аккаунт для доступа к приложению</Subtitle>
+        <Subtitle>Создайте аккаунт для доступа к персональному AI-ассистенту с голосовым управлением</Subtitle>
       </FormHeader>
-      
+
       <Form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="username">Имя пользователя</Label>
@@ -101,7 +101,7 @@ const RegisterForm = () => {
           </InputWrapper>
           {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
         </FormGroup>
-        
+
         <FormGroup>
           <Label htmlFor="email">Email</Label>
           <InputWrapper>
@@ -119,7 +119,7 @@ const RegisterForm = () => {
           </InputWrapper>
           {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
         </FormGroup>
-        
+
         <FormGroup>
           <Label htmlFor="password">Пароль</Label>
           <InputWrapper>
@@ -134,8 +134,8 @@ const RegisterForm = () => {
               placeholder="Пароль"
               error={errors.password}
             />
-            <PasswordToggle 
-              type="button" 
+            <PasswordToggle
+              type="button"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <FiEyeOff /> : <FiEye />}
@@ -144,7 +144,7 @@ const RegisterForm = () => {
           {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
           <PasswordHint>Минимум 6 символов</PasswordHint>
         </FormGroup>
-        
+
         <FormGroup>
           <Label htmlFor="passwordConfirm">Подтверждение пароля</Label>
           <InputWrapper>
@@ -159,8 +159,8 @@ const RegisterForm = () => {
               placeholder="Подтверждение пароля"
               error={errors.passwordConfirm}
             />
-            <PasswordToggle 
-              type="button" 
+            <PasswordToggle
+              type="button"
               onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
             >
               {showPasswordConfirm ? <FiEyeOff /> : <FiEye />}
@@ -168,7 +168,7 @@ const RegisterForm = () => {
           </InputWrapper>
           {errors.passwordConfirm && <ErrorMessage>{errors.passwordConfirm}</ErrorMessage>}
         </FormGroup>
-        
+
         <TermsAgreement>
           <Checkbox
             type="checkbox"
@@ -179,7 +179,7 @@ const RegisterForm = () => {
             Я согласен с <TermsLink to="/terms">условиями использования</TermsLink>
           </TermsLabel>
         </TermsAgreement>
-        
+
         <SubmitButton type="submit" disabled={loading}>
           {loading ? (
             <>
@@ -194,13 +194,13 @@ const RegisterForm = () => {
           )}
         </SubmitButton>
       </Form>
-      
+
       <Divider>
         <DividerLine />
         <DividerText>Или</DividerText>
         <DividerLine />
       </Divider>
-      
+
       <LoginPrompt>
         Уже есть аккаунт? <LoginLink to="/login">Войти</LoginLink>
       </LoginPrompt>

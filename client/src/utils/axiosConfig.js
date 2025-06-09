@@ -14,7 +14,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     console.log('Axios request:', config.method.toUpperCase(), config.baseURL + config.url);
-    
+
     const accessToken = localStorage.getItem('accessToken');
     if (accessToken) {
       config.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -42,6 +42,21 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       console.error('Status:', error.response.status);
       console.error('Data:', error.response.data);
+
+      // Если сервер вернул 401 (токен просрочен / невалиден) – очищаем токены и отправляем на логин
+      if (error.response.status === 401) {
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        } catch (e) {
+          console.warn('Не удалось очистить localStorage', e);
+        }
+
+        // Избегаем бесконечного редиректа, если уже на странице логина
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }

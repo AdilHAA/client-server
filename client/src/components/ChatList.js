@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+// import { Link, useNavigate } from 'react-router-dom'; // useNavigate и Link больше не нужны
 import { getAllChats, createChat } from '../api/chatApi';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
 
-const ChatList = () => {
+const ChatList = ({ onChatSelect, onNewChatCreated }) => { // Принимаем onChatSelect и onNewChatCreated
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Убираем useNavigate
   const { user, isAuth } = useAuth();
 
   useEffect(() => {
     if (!isAuth) {
       console.log('User not authenticated, redirecting to login');
-      navigate('/login');
+      // navigate('/login'); // Навигация теперь обрабатывается в ProtectedRoute или родительском компоненте
       return;
     }
-    
+
     fetchChats();
-  }, [isAuth, navigate]);
+    // }, [isAuth, navigate]); // Убираем navigate из зависимостей
+  }, [isAuth]);
 
   const fetchChats = async () => {
     try {
@@ -27,7 +28,7 @@ const ChatList = () => {
       console.log('Trying to fetch chats...');
       const chatList = await getAllChats();
       console.log('Received chat list:', chatList);
-      
+
       if (Array.isArray(chatList)) {
         setChats(chatList);
         setError(null);
@@ -49,7 +50,10 @@ const ChatList = () => {
     try {
       const newChat = await createChat('Новый чат');
       setChats((prevChats) => [...prevChats, newChat]);
-      navigate(`/chat/${newChat.id}`);
+      // navigate(`/chat/${newChat.id}`); // Убираем навигацию
+      if (onNewChatCreated) {
+        onNewChatCreated(newChat.id); // Сообщаем родительскому компоненту ID нового чата
+      }
     } catch (err) {
       setError('Не удалось создать новый чат');
       console.error(err);
@@ -68,13 +72,14 @@ const ChatList = () => {
           <PlusIcon>+</PlusIcon> Новый чат
         </NewChatButton>
       </Header>
-      
+
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      
+
       <ChatListContainer>
         {chats.length > 0 ? (
           chats.map((chat) => (
-            <ChatItem key={chat.id} to={`/chat/${chat.id}`}>
+            // <ChatItem key={chat.id} to={`/chat/${chat.id}`}> // Заменяем Link на div и добавляем onClick
+            <ChatItem key={chat.id} onClick={() => onChatSelect(chat.id)}>
               <ChatIcon>💬</ChatIcon>
               <ChatInfo>
                 <ChatTitle>{chat.title}</ChatTitle>
@@ -173,7 +178,7 @@ const ChatListContainer = styled.div`
   overflow-y: auto;
 `;
 
-const ChatItem = styled(Link)`
+const ChatItem = styled.div`
   display: flex;
   align-items: center;
   padding: 1rem;

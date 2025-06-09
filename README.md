@@ -1,6 +1,197 @@
 # AI Assistant
 
-Полноценное приложение с чат-ботом, включающее бэкенд на FastAPI и фронтенд на React. Система обеспечивает аутентификацию пользователей, чат с историей сообщений через WebSocket и возможность голосового управления.
+Веб-приложение с чат-ботом на базе GigaChat и функцией преобразования речи в текст и текста в речь с использованием SaluteSpeech.
+
+## Требования
+
+- Docker
+- Docker Compose
+- Токены доступа к GigaChat и SaluteSpeech API
+
+## Подготовка к деплою
+
+1. Создайте файл `.env` в корневой директории проекта на основе `example_dotenv`:
+
+```bash
+cp example_dotenv .env
+```
+
+2. Заполните в файле `.env` необходимые токены:
+   - `GIGACHAT_AUTH_TOKEN` - токен для доступа к GigaChat API
+   - `GIGACHAT_CLIENT_SECRET` - секретный ключ GigaChat
+   - `SALUTE_SPEECH_AUTH_TOKEN` - токен для доступа к SaluteSpeech API
+   - `SALUTE_SPEECH_SCOPE` - область действия для SaluteSpeech API
+
+## Запуск на локальном компьютере
+
+```bash
+docker-compose up --build
+```
+
+После запуска приложение будет доступно:
+- Фронтенд: http://localhost
+- Бэкенд API: http://localhost:8080
+
+## Деплой на сервер
+
+### Вариант 1: Деплой через Docker Compose (рекомендуется)
+
+1. Установите Docker и Docker Compose на вашем сервере:
+
+```bash
+# Для Ubuntu/Debian
+sudo apt update
+sudo apt install docker.io docker-compose
+sudo systemctl enable --now docker
+```
+
+2. Клонируйте репозиторий на сервер:
+
+```bash
+git clone <url-вашего-репозитория>
+cd <имя-директории>
+```
+
+3. Создайте и настройте файл `.env` как описано выше.
+
+4. Запустите приложение:
+
+```bash
+docker-compose up -d --build
+```
+
+### Вариант 2: Деплой с помощью Nginx и systemd
+
+1. Установите необходимые пакеты:
+
+```bash
+sudo apt update
+sudo apt install python3 python3-pip nodejs npm nginx ffmpeg
+```
+
+2. Настройте серверную часть:
+
+```bash
+# Клонируйте репозиторий
+git clone <url-вашего-репозитория>
+cd <имя-директории>
+
+# Создайте виртуальное окружение
+python3 -m venv venv
+source venv/bin/activate
+
+# Установите зависимости
+pip install -r requirements.txt
+
+# Настройте файл .env
+cp example_dotenv .env
+# Отредактируйте .env с вашими API ключами
+```
+
+3. Настройте клиентскую часть:
+
+```bash
+cd client
+npm install
+npm run build
+```
+
+4. Создайте systemd сервис для API:
+
+```bash
+sudo nano /etc/systemd/system/ai-assistant-api.service
+```
+
+Содержимое файла:
+```
+[Unit]
+Description=AI Assistant API
+After=network.target
+
+[Service]
+User=<имя-пользователя>
+WorkingDirectory=/путь/к/вашему/проекту
+ExecStart=/путь/к/вашему/проекту/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8080
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+5. Настройте Nginx:
+
+```bash
+sudo nano /etc/nginx/sites-available/ai-assistant
+```
+
+Содержимое файла:
+```
+server {
+    listen 80;
+    server_name ваш-домен.ру;
+
+    # Фронтенд
+    location / {
+        root /путь/к/вашему/проекту/client/build;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Бэкенд API
+    location /api/ {
+        proxy_pass http://localhost:8080/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # WebSocket
+    location /ws {
+        proxy_pass http://localhost:8080/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+6. Активируйте конфигурацию Nginx и запустите сервисы:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/ai-assistant /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+sudo systemctl enable --now ai-assistant-api
+```
+
+## Обновление приложения
+
+### Для Docker Compose:
+
+```bash
+git pull
+docker-compose down
+docker-compose up -d --build
+```
+
+### Для ручного деплоя:
+
+```bash
+git pull
+# Обновите бэкенд
+source venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart ai-assistant-api
+
+# Обновите фронтенд
+cd client
+npm install
+npm run build
+```
 
 ## Возможности
 

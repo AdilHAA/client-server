@@ -1,0 +1,31 @@
+# Токен аутентификации GigaChat в формате Base64
+# Должен быть в формате закодированной строки Base64 
+GIGACHAT_AUTH_TOKEN=ваш_base64_токен_здесь
+
+# Уникальный идентификатор запроса (можно оставить как есть)
+# Если не указан, будет сгенерирован автоматически
+RqUID=550e8400-e29b-41d4-a716-446655440000
+
+# Другие настройки приложения
+DATABASE_URL=sqlite:///app.db
+
+# SaluteSpeech API (авторизация для STT/TTS)
+SALUTE_SPEECH_AUTH_TOKEN=ваш_base64_токен_доступа
+SALUTE_SPEECH_SCOPE=SALUTE_SPEECH_PERS  # scope согласно документации
+SALUTE_SPEECH_RQUID=550e8400-e29b-41d4-a716-446655440000  # опционально 
+
+GIGACHAT_CLIENT_SECRET=xxx
+
+# --- ПУТЬ К FFMPEG ---
+# Укажите полный путь к ИСПОЛНЯЕМОМУ файлу ffmpeg (например, C:\\ffmpeg\\bin\\ffmpeg.exe)
+# Это необходимо для конвертации аудио (WebM -> WAV) на стороне сервера.
+# Если оставить пустым, приложение будет искать ffmpeg в системном PATH.
+# Для Windows: используйте двойные обратные слэши (\\) в пути.
+#
+# ПРИМЕР для Windows:
+# FFMPEG_PATH=C:\\ffmpeg\\bin\\ffmpeg.exe
+#
+# ПРИМЕР для Linux/macOS:
+# FFMPEG_PATH=/usr/bin/ffmpeg
+#
+FFMPEG_PATH= 

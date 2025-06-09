@@ -1,13 +1,23 @@
 fastapi==0.104.1
 uvicorn==0.23.2
 sqlalchemy==2.0.23
-pydantic==2.4.2
+pydantic>=2.5.2,<3.0.0
 python-jose==3.3.0
 passlib==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.6
 websockets==11.0.3
-langchain==0.0.292
-langchain-community==0.0.10
+langchain
+langchain-community
+langchain-core
 python-dotenv==1.0.0
-aiohttp==3.8.6 
+aiohttp==3.8.6
+langchain-mistralai==0.0.3
+beautifulsoup4==4.12.2
+requests==2.31.0
+lxml==4.9.3
+# Dependencies for new news agent
+langchain-anthropic
+langchain-google-community
+langgraph
+langgraph-checkpoint 

@@ -28,31 +28,31 @@ const LoginForm = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!username.trim()) {
       newErrors.username = 'Имя пользователя обязательно';
     }
-    
+
     if (!password) {
       newErrors.password = 'Пароль обязателен';
     } else if (password.length < 6) {
       newErrors.password = 'Пароль должен содержать минимум 6 символов';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       const success = await login(username, password);
-      
+
       if (success) {
         navigate('/chats');
       }
@@ -70,9 +70,9 @@ const LoginForm = () => {
     <FormContainer>
       <FormHeader>
         <Title>Вход в систему</Title>
-        <Subtitle>Добро пожаловать! Пожалуйста, войдите в свой аккаунт.</Subtitle>
+        <Subtitle>Войдите в свой аккаунт, чтобы получить доступ к AI-ассистенту с голосовым управлением</Subtitle>
       </FormHeader>
-      
+
       <Form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="username">Имя пользователя</Label>
@@ -89,7 +89,7 @@ const LoginForm = () => {
           </InputWrapper>
           {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
         </FormGroup>
-        
+
         <FormGroup>
           <Label htmlFor="password">Пароль</Label>
           <InputWrapper>
@@ -102,8 +102,8 @@ const LoginForm = () => {
               placeholder="Введите пароль"
               $error={errors.password}
             />
-            <PasswordToggle 
-              type="button" 
+            <PasswordToggle
+              type="button"
               onClick={toggleShowPassword}
             >
               {showPassword ? <FiEyeOff /> : <FiEye />}
@@ -111,7 +111,7 @@ const LoginForm = () => {
           </InputWrapper>
           {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
         </FormGroup>
-        
+
         <RememberForgotRow>
           <RememberMeWrapper>
             <Checkbox
@@ -122,7 +122,7 @@ const LoginForm = () => {
           </RememberMeWrapper>
           <ForgotPassword to="/forgot-password">Забыли пароль?</ForgotPassword>
         </RememberForgotRow>
-        
+
         <SubmitButton type="submit" disabled={loading}>
           {loading ? (
             <>
@@ -137,13 +137,13 @@ const LoginForm = () => {
           )}
         </SubmitButton>
       </Form>
-      
+
       <Divider>
         <DividerLine />
         <DividerText>Или</DividerText>
         <DividerLine />
       </Divider>
-      
+
       <RegisterPrompt>
         Еще нет аккаунта? <RegisterLink to="/register">Зарегистрироваться</RegisterLink>
       </RegisterPrompt>

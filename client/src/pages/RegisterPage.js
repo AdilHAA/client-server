@@ -17,23 +17,23 @@ const RegisterPage = () => {
       <AppInfo>
         <LogoContainer>
           <Logo />
-          <AppName>VoiceConnect</AppName>
+          <AppName>AI Assistant</AppName>
         </LogoContainer>
         <AppDescription>
-          Присоединяйтесь к нашему сообществу и наслаждайтесь безопасным общением 
+          Создайте аккаунт и получите доступ к персональному ИИ-ассистенту с голосовым управлением
         </AppDescription>
         <Features>
           <FeatureItem>
             <FeatureIcon>🌐</FeatureIcon>
-            <FeatureText>Доступно на всех устройствах</FeatureText>
+            <FeatureText>Актуальная информация из интернета</FeatureText>
           </FeatureItem>
           <FeatureItem>
             <FeatureIcon>⚡</FeatureIcon>
-            <FeatureText>Моментальная доставка сообщений</FeatureText>
+            <FeatureText>Быстрые и точные ответы</FeatureText>
           </FeatureItem>
           <FeatureItem>
-            <FeatureIcon>🧩</FeatureIcon>
-            <FeatureText>Интуитивно понятный интерфейс</FeatureText>
+            <FeatureIcon>🧠</FeatureIcon>
+            <FeatureText>Постоянное обучение и улучшение</FeatureText>
           </FeatureItem>
         </Features>
       </AppInfo>
