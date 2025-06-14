@@ -33,20 +33,21 @@ def _is_news_query(text: str) -> bool:
         "как дела", "как у тебя дела", "привет", "доброе утро", "добрый вечер",
         "добрый день", "здравствуй", "здравствуйте"
     ]
-    if len(lower_text) < 40 and any(g in lower_text for g in greeting_triggers):
-        return False  # однозначно не новости
 
+    # Более строгий промпт, чтобы отделять запросы "рецепт" и другие от новостей
     prompt = (
-        "Категоризируй пользовательский запрос строго одним словом: \n"
-        "news  –  если пользователь хочет получить актуальные новости/обзор событий;\n"
-        "chat  –  если это обычное общение, формальное или дружеское приветствие, \n"
-        "личный вопрос или всё, что не требует свежих новостей.\n\n"
+        "Классифицируй пользовательский запрос СТРОГО одним словом: \n"
+        "news    — если человек просит актуальные новости, аналитику свежих событий, обзор СМИ;\n"
+        "chat    — если это дружеское общение, личный вопрос, философский/бытовой совет, рецепт, инструкция, учебный материал \n"
+        "          или любой вопрос, НЕ требующий просмотра СМИ за последние дни.\n\n"
         "Примеры (→ ответ):\n"
         "\"Как дела?\" → chat\n"
         "\"Расскажи последние новости про Tesla\" → news\n"
+        "\"Как приготовить яблочный пирог?\" → chat\n"
+        "\"Что нового в мире технологий?\" → news\n"
         "\"Привет!\" → chat\n"
-        "\"Что происходит на рынке нефти?\" → news\n\n"
-        "Верни ТОЛЬКО одно слово (news или chat).\n\n"
+        "\"Какие тренды на рынке нефти сейчас?\" → news\n\n"
+        "Верни ТОЛЬКО одно слово (news или chat). Никакого дополнительного текста.\n\n"
         "Запрос: " + text
     )
 
@@ -71,8 +72,11 @@ async def _answer_with_web_search(query: str) -> str:
 
     loop = asyncio.get_event_loop()
 
+    # Переписываем запрос для более точного поиска
+    search_query = _rewrite_query(query, "general")
+
     # Поиск (может быть блокирующим) – выполняем в треде
-    raw_results = await loop.run_in_executor(None, lambda: search_tool.invoke(query)) or []
+    raw_results = await loop.run_in_executor(None, lambda: search_tool.invoke(search_query)) or []
 
     # Унификация результатов
     unified: list[dict] = []
@@ -120,6 +124,14 @@ _INFO_QUERY_TRIGGERS = [
     r"\b(what|when|who|why|how|where|which)\b",
 ]
 
+# Набор тем, которые модель часто знает сама (рецепты, базовые определения и т.д.),
+# поэтому веб-поиск обычно не требуется.
+_LOCAL_KNOWLEDGE_TOPICS = [
+    r"рецепт", r"приготови", r"приготовить", r"cook", r"recipe", r"пирог", r"яблочн",
+    r"блины", r"каша", r"cake", r"pie",
+    r"как сделать", r"как сварить", r"как приготовить", r"how to cook", r"how to make"
+]
+
 @lru_cache(maxsize=256)
 def _needs_web_search(text: str) -> bool:
     """Определяет, требуется ли веб-поиск для ответа.
@@ -130,6 +142,10 @@ def _needs_web_search(text: str) -> bool:
     """
 
     lower = text.lower()
+
+    # Если запрос явно про кулинарию/рецепты – модель справится без поиска
+    if any(re.search(pat, lower) for pat in _LOCAL_KNOWLEDGE_TOPICS):
+        return False
 
     # Простые эвристики
     if any(re.search(pat, lower) for pat in _INFO_QUERY_TRIGGERS):
@@ -149,6 +165,37 @@ def _needs_web_search(text: str) -> bool:
         return safe_model_invoke(prompt, "no").strip().lower().startswith("y")
     except Exception:
         return False
+
+# ----------------------------------------------------------------------------
+# Подготовка запроса к веб-поиску (rewriter)
+# ----------------------------------------------------------------------------
+
+def _rewrite_query(text: str, mode: str = "general") -> str:
+    """Переписывает пользовательский запрос для подачи в поисковик.
+
+    mode="news"      — нужен запрос, оптимальный для новостного поиска (добавить год, ключевые слова «news»).
+    mode="general"   — нейтральный информационный запрос.
+    """
+
+    # Безопасность: если запрос совсем короткий, возвращаем как есть
+    if len(text.split()) <= 3:
+        return text.strip()
+
+    mode_hint = "новости последних дней" if mode == "news" else "поиска точной информации"
+
+    prompt = (
+        f"Перепиши пользовательский запрос так, чтобы он стал лаконичным ключевым запросом для {mode_hint}.\n"
+        f"Не добавляй лишних слов, избегай стоп-слов (расскажи, пожалуйста и т.д.).\n"
+        f"Верни только сам запрос без кавычек.\n\n"
+        f"Оригинал: {text}"
+    )
+
+    try:
+        rewritten = safe_model_invoke(prompt, text).strip()
+        # Ограничиваем длину до 120 символов — этого достаточно для поисковика
+        return rewritten[:120]
+    except Exception:
+        return text
 
 async def process_message(chat_id: int, user_message: str) -> str:
     """
@@ -176,27 +223,40 @@ async def process_message(chat_id: int, user_message: str) -> str:
 
         # Если запрос похож на новостной – сначала пользуемся news-агентом
         if _is_news_query(user_message):
-            summary_resp = await asyncio.to_thread(get_news_summary, user_message, 5)
+            # Переписываем запрос для новостного поиска
+            news_search_query = _rewrite_query(user_message, "news")
+
+            summary_resp = await asyncio.to_thread(get_news_summary, news_search_query, 5)
             if summary_resp and len(summary_resp.strip()) >= _MIN_MEANINGFUL_LEN:
                 response = summary_resp
 
             # Если парсер не дал достойного ответа – пробуем fallback-агента
             if not response:
-                response = await asyncio.to_thread(run_news_agent, user_message)
+                response = await asyncio.to_thread(run_news_agent, news_search_query)
 
-        # Если пока нет содержательного ответа
+        # ------------------------------------------------------------
+        # Для остальных запросов: сначала пробуем прямой ответ LLM.
+        # Если он слишком короткий/неинформативный И нужен веб-поиск – добавляем поиск.
+        # ------------------------------------------------------------
+
         if not response or len(response.strip()) < _MIN_MEANINGFUL_LEN or "⚠️" in response:
 
-            if _needs_web_search(user_message):
-                # ✅ считаем, что нужен поиск
-                web_resp = await _answer_with_web_search(user_message)
-                if web_resp and len(web_resp.strip()) >= _MIN_MEANINGFUL_LEN:
-                    response = web_resp
-                else:
-                    response = await asyncio.to_thread(safe_model_invoke, user_message, "")
+            # 1. Сначала пробуем получить прямой ответ модели
+            direct = await asyncio.to_thread(safe_model_invoke, user_message, "")
+
+            # 2. Если ответ достаточен — используем его
+            if direct and len(direct.strip()) >= _MIN_MEANINGFUL_LEN:
+                response = direct
             else:
-                # ❌ веб-поиск не нужен – сразу LLM без ссылок
-                response = await asyncio.to_thread(safe_model_invoke, user_message, "")
+                # 3. Ответ слабый — решаем, нужен ли веб-поиск
+                if _needs_web_search(user_message):
+                    web_resp = await _answer_with_web_search(user_message)
+                    if web_resp and len(web_resp.strip()) >= _MIN_MEANINGFUL_LEN:
+                        response = web_resp
+                    else:
+                        response = direct or web_resp
+                else:
+                    response = direct
 
         print(f"AI response length: {len(response) if response else 0}")
         print(f"AI response: {response[:100]}...")  # Выводим начало ответа для отладки

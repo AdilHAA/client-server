@@ -71,6 +71,8 @@ const Sidebar = styled.div`
 const MainContent = styled.div`
   flex: 1;
   display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--light-color);
   overflow-y: auto;
 `;

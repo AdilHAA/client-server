@@ -236,11 +236,31 @@ const ChatWindow = ({ chatId, onBack }) => {
 
   const handleVoiceMessage = async (audioBlob, transcription) => {
     try {
+      if (!transcription || !transcription.trim()) {
+        console.warn("Пустая расшифровка, сообщение не будет отправлено");
+        return;
+      }
+
+      // 1) Оптимистично добавляем сообщение пользователя сразу
+      const tempVoiceMsg = {
+        id: `temp-voice-${Date.now()}`,
+        role: 'user',
+        content: transcription,
+        created_at: new Date().toISOString(),
+        is_voice: 1
+      };
+
+      setMessages((prev) => [...prev, tempVoiceMsg]);
+
       // Отправляем голосовое сообщение
       if (wsConnection) {
         wsConnection.send(transcription, 1);
       } else {
-        await sendMessage(chatId, transcription, 1);
+        const resp = await sendMessage(chatId, transcription, 1);
+        // Заменяем временное сообщение на настоящее, если пришёл ответ
+        if (resp && resp.id) {
+          setMessages((prev) => prev.filter((m) => m.id !== tempVoiceMsg.id).concat(resp));
+        }
       }
     } catch (err) {
       setError('Не удалось отправить голосовое сообщение');
@@ -300,7 +320,7 @@ const ChatWindow = ({ chatId, onBack }) => {
         </HeaderTitle>
       </Header>
 
-      <MessagesContainer>
+      <MessagesContainer $empty={messages.length === 0}>
         {messages.length === 0 ? (
           <WelcomeMessage>
             <WelcomeIcon>👋</WelcomeIcon>
@@ -435,6 +455,11 @@ const MessagesContainer = styled.div`
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  ${({ $empty }) => $empty && `
+    align-items: center;
+    justify-content: center;
+    overflow-y: hidden;
+  `}
 `;
 
 const MessageBubble = styled.div`
@@ -646,13 +671,13 @@ const VoiceIndicator = styled.span`
 `;
 
 const WelcomeMessage = styled.div`
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 2rem;
-  margin: auto;
   max-width: 600px;
 `;
 
