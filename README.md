@@ -15,7 +15,6 @@
 - **Бэкенд**: Python, FastAPI, SQLAlchemy, LangChain, Uvicorn
 - **Фронтенд**: React, Axios, Styled-components
 - **База данных**: SQLite
-- **Развертывание**: Docker, Docker Compose, Nginx
 
 ## Подробности реализации
 
